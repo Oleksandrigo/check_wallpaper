@@ -13,9 +13,6 @@ file_name = subprocess.run(
     capture_output=True,
     text=True).stdout
 
-res = ""
-for i in file_name:
-    if i.isprintable():
-        res += i
+res = ''.join(i for i in file_name if i.isprintable())
 
 subprocess.Popen(r'explorer /select,{res}'.replace("{res}", res))
