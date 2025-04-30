@@ -1,27 +1,46 @@
 import subprocess
 import os
+import re
+
 
 def get_file_path():
-    # PowerShell команды для получения пути к файлу
-    ps_commands = [
-        r"(Get-ItemProperty 'HKCU:\Control Panel\Desktop' TranscodedImageCache -ErrorAction Stop).TranscodedImageCache",
-        r"[System.Text.Encoding]::Unicode.GetString({0}) -replace '(.+)([A-Z]:[0-9a-zA-Z\\])+','$2'"
-    ]
+    # PowerShell команда для получения данных TranscodedImageCache
+    ps_command = r"(Get-ItemProperty 'HKCU:\Control Panel\Desktop' TranscodedImageCache -ErrorAction Stop).TranscodedImageCache"
     
-    # Выполнение PowerShell команд
+    # Выполнение PowerShell команды
     result = subprocess.run(
-        ['powershell.exe', "-NoProfile", "-ExecutionPolicy", "Bypass", 
-         ps_commands[1].format(ps_commands[0])],
-        capture_output=True, text=True, check=True
+        [
+            "powershell.exe",
+            "-NoProfile",
+            "-ExecutionPolicy",
+            "Bypass",
+            f"[System.Text.Encoding]::Unicode.GetString({ps_command})",
+        ],
+        capture_output=True,
+        text=True,
+        check=True
     )
     
-    # Очистка и проверка результата
-    file_path = ''.join(char for char in result.stdout if char.isprintable()).strip()
-    return file_path if os.path.exists(file_path) else None
+    # Вывод сырого результата для отладки
+    print(f"{result.stdout=}")
+    
+    # Применение регулярного выражения для извлечения пути к файлу
+    # Ищем паттерн, соответствующий пути в Windows с любым расширением
+    file_path_match = re.search(r'([A-Z]:[\\\/][^?]*\.[a-zA-Z0-9]+)', result.stdout)
+    
+    if file_path_match:
+        file_path = file_path_match.group(1)
+        # Убедимся, что путь имеет правильный формат
+        file_path = os.path.normpath(file_path)
+        print(f"{file_path=}")
+        return file_path if os.path.exists(file_path) else None
+    return None
+
 
 def open_file_in_explorer(file_path):
     # Открытие файла в проводнике
     subprocess.Popen(f'explorer /select,"{file_path}"')
+
 
 def main():
     file_path = get_file_path()
@@ -29,6 +48,7 @@ def main():
         open_file_in_explorer(file_path)
     else:
         print("Не удалось получить действительный путь к файлу.")
+
 
 if __name__ == "__main__":
     main()
