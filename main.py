@@ -30,17 +30,17 @@ def get_file_path():
     
     if file_path_match:
         file_path = file_path_match.group(1)
-        # Убедимся, что путь имеет правильный формат
         file_path = os.path.normpath(file_path)
         print(f"{file_path=}")
         return file_path if os.path.exists(file_path) else None
+    
     return None
 
 
 def open_file_in_explorer(file_path):
     # Открытие файла в проводнике
-    subprocess.Popen(f'explorer /select,"{file_path}"')
-
+    print(f"Открытие файла в проводнике: {file_path}")
+    subprocess.Popen(f'explorer /select,"{file_path}"', shell=True)
 
 def main():
     file_path = get_file_path()
